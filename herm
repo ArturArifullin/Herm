@@ -1,0 +1,63 @@
+import numpy as np
+
+def hermite_basis_functions(u):
+    """Compute Hermite basis functions."""
+    h1 = 2 * u**3 - 3 * u**2 + 1
+    h2 = -2 * u**3 + 3 * u**2
+    h3 = u**3 - 2 * u**2 + u
+    h4 = u**3 - u**2
+    return h1, h2, h3, h4
+
+def compute_derivatives(x, y):
+    """Compute derivatives using formulas from the provided image."""
+    n = len(x)
+    dy = np.zeros(n)
+    
+    for j in range(n):
+        if j == 0:
+            dy[j] = (y[1] - y[0]) / (x[1] - x[0])
+        elif j == n - 1:
+            dy[j] = (y[-1] - y[-2]) / (x[-1] - x[-2])
+        else:
+            a_j = -(y[j+1] - y[j]) / ((x[j+1] - x[j]) * (x[j+1] - x[j-1]))
+            b_j = (y[j+1] - 2 * y[j] + y[j-1]) / ((x[j+1] - x[j]) * (x[j] - x[j-1]))
+            c_j = (y[j] - y[j-1]) / ((x[j] - x[j-1]) * (x[j+1] - x[j-1]))
+            dy[j] = y[j] * a_j + y[j+1] * b_j + y[j-1] * c_j
+    
+    return dy
+
+def hermite_interpolation(x, y, x_target):
+    """Compute Hermite interpolation for given points and computed derivatives."""
+    dy = compute_derivatives(x, y)
+    n = len(x) - 1
+    result = np.zeros_like(x_target)
+    
+    for i in range(n):
+        mask = (x_target >= x[i]) & (x_target <= x[i+1])
+        u = (x_target[mask] - x[i]) / (x[i+1] - x[i])
+        h1, h2, h3, h4 = hermite_basis_functions(u)
+        
+        P = (
+            h1 * y[i] +
+            h2 * y[i+1] +
+            h3 * (x[i+1] - x[i]) * dy[i] +
+            h4 * (x[i+1] - x[i]) * dy[i+1]
+        )
+        result[mask] = P
+    
+    return result
+
+# Пример данных
+x = np.array([0, 1, 2, 3], dtype=float)
+y = np.array([1, 2, 0, 2], dtype=float)
+
+# Точки интерполяции
+x_target = np.linspace(0, 3, 100)
+y_target = hermite_interpolation(x, y, x_target)
+
+# График
+import matplotlib.pyplot as plt
+plt.plot(x, y, 'ro', label='Исходные точки')
+plt.plot(x_target, y_target, 'b-', label='Эрмитова интерполяция')
+plt.legend()
+plt.show()
